@@ -1,0 +1,2 @@
+3.	(/* Unclos..., Open comment at EOF)
+6.	(002, Malformed number)
