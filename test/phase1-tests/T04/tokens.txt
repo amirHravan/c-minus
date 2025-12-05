@@ -12,3 +12,4 @@
 12.	(ID, a) (SYMBOL, =) (ID, a) (SYMBOL, +) (NUM, 1) (SYMBOL, ;) 
 13.	(SYMBOL, }) 
 14.	(KEYWORD, return) (SYMBOL, ;) 
+15.	(SYMBOL, }) 
