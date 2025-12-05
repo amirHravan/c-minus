@@ -1,2 +1,1 @@
-11.	(1dst, Malformed number)
-19.	(011, Malformed number)
+No lexical errors found.

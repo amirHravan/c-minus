@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 class SymbolTable:
     def __init__(self) -> None:
         self.symbols = []
-        for keyword in sorted(list(KEYWORDS)):
+        for keyword in KEYWORDS:
             self.symbols.append(keyword)
 
     def add_symbol(self, symbol: str) -> None:
@@ -30,10 +30,8 @@ class SymbolTable:
         try:
             with open(filename, "w", encoding="utf-8") as f:
                 index = 1
-                # Keywords (already sorted)
-                keywords = [s for s in self.symbols if s in KEYWORDS]
-                # IDs (need to sort)
-                ids = sorted([s for s in self.symbols if s not in KEYWORDS])
+                keywords = sorted([s for s in self.symbols if s in KEYWORDS])
+                ids = sorted([s for s in self.symbols if s not in KEYWORDS], key=str.lower)
                 for symbol in keywords + ids:
                     f.write(f"{index}.\t{symbol}\n")
                     index += 1
@@ -77,9 +75,10 @@ class ErrorTable:
 
     def add_error(self, error: LeximError) -> None:
         # Truncate unclosed comment error specifically
+        # T07 test expects 9 characters before "..."
         if error.error_type == LeximErrorType.UNCLOSED_COMMENT:
-            if len(error.lexeme) > 7:
-                lexeme = error.lexeme[:7] + "..."
+            if len(error.lexeme) > 9:
+                lexeme = error.lexeme[:9] + "..."
             else:
                 lexeme = error.lexeme
         else:

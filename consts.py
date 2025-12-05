@@ -8,27 +8,22 @@ KEYWORDS = {
     "for",
 }
 
-# Symbols map: Maps the string representation to the token type 'SYMBOL'
-# We treat single and double character symbols.
 SYMBOLS = {
-    "+",
-    "-",
-    "*",
-    "/",
-    "<",
-    "=",
     ";",
+    ":",
     ",",
+    "[",
+    "]",
     "(",
     ")",
     "{",
     "}",
-    "[",
-    "]",
-    "==",
-    "<=",
-    ">=",
-    "!=",
+    "+",
+    "-",
+    "*",
+    "/",
+    "=",
+    "<",
     "==",
 }
 

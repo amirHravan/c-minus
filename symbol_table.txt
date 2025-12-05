@@ -5,11 +5,4 @@
 5.	int
 6.	return
 7.	void
-8.	a
-9.	arr
-10.	b
-11.	d
-12.	e
-13.	f
-14.	foo
-15.	main
+8.	x

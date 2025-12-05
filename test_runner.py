@@ -16,6 +16,12 @@ def run_test(test_dir):
     expected_errors = test_dir / "lexical_errors.txt"
     expected_symbols = test_dir / "symbol_table.txt"
 
+    token_table.tokens = {}
+    error_table.errors = []
+    symbol_table.symbols = []
+    for keyword in KEYWORDS:
+        symbol_table.symbols.append(keyword)
+
     # Read input
     with open(input_file, "r", encoding="utf-8") as f:
         content = f.read()
@@ -39,10 +45,10 @@ def run_test(test_dir):
 
     actual_symbols = []
     index = 1
-    # Keywords (already sorted)
-    keywords = [s for s in symbol_table.symbols if s in KEYWORDS]
-    # IDs (need to sort)
-    ids = sorted([s for s in symbol_table.symbols if s not in KEYWORDS])
+    # Keywords (need to sort alphabetically, case-sensitive)
+    keywords = sorted([s for s in symbol_table.symbols if s in KEYWORDS])
+    # IDs (need to sort alphabetically, case-insensitive)
+    ids = sorted([s for s in symbol_table.symbols if s not in KEYWORDS], key=str.lower)
     for symbol in keywords + ids:
         actual_symbols.append(f"{index}.\t{symbol}")
         index += 1
