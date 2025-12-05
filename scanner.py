@@ -19,7 +19,7 @@ class Scanner:
     def _advance(self) -> str:
         if self.cursor < self.length:
             ch = self.text[self.cursor]
-            if ch == "\n":
+            if ch == "\n" or ch == "\f":
                 self.line_number += 1
             self.cursor += 1
             return ch
@@ -133,12 +133,16 @@ class Scanner:
         while self._peek() is not None and self._peek().isdigit():
             lexeme += self._advance()
 
-        # Check for Malformed Number (followed by letters)
-        if self._peek() is not None and self._peek().isalpha():
-            # Panic Mode for Number: consume until delimiter
-            while self._peek() is not None and (
-                self._peek().isalnum() or self._peek() == "_"
-            ):
+        next_char = self._peek()
+        
+        # Check if followed by invalid character (not whitespace, not symbol, not EOF)
+        if (next_char is not None 
+            and next_char not in WHITESPACE 
+            and not self._is_symbol_start(next_char)):
+            # Panic Mode for Number: consume until delimiter (whitespace or symbol)
+            while (self._peek() is not None 
+                   and self._peek() not in WHITESPACE 
+                   and not self._is_symbol_start(self._peek())):
                 lexeme += self._advance()
             self._add_error(
                 LeximError(self.line_number, lexeme, LeximErrorType.MALFORMED_NUM)
@@ -221,7 +225,7 @@ class Scanner:
         # Consume //
         self._advance()
         self._advance()
-        while self._peek() is not None and self._peek() != "\n" and self._peek() != "\f":
+        while not self._is_eof() and self._peek() != "\n" and self._peek() != "\f":
             _ = self._advance()
         # Note: \n or \f will be handled by the main loop
 

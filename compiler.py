@@ -1,3 +1,6 @@
+# Amir Hossein Ravan Nakhjavani - 400104975
+# Maedeh Heydari - 400104918
+
 import logging
 
 from scanner import Scanner
