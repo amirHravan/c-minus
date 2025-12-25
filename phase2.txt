@@ -32,6 +32,32 @@
    Continue from there
    Such tokens are called synchronizing tokens (using the follow set of each non-terminal as its synchronizing set)
 
+Panic-Mode Recovery
+• Assume in a syntax error, non-terminal A is on the
+top of the stack.
+– define the synchronizing set of A to be Follow(A).
+Then skip input until a token in Follow(A) appears
+and then pop A from the stack. Resume parsing...
+– add symbols of FIRST(A) to the synchronizing
+set. In this case, we skip input and once we find a
+token in FIRST(A), we resume parsing from A.
+
+Panic-Mode Recovery (Cont.)
+Modify the empty cells of the Parsing Table.
+1. if M[A, a] = {empty} and a belongs to Follow(A) then
+we set M[A, a] = “synch”
+Error-recovery Strategy :
+If A=top-of-the-stack and a=current-token,
+1. If A is NT and M[A, a] = {empty} then skip a from the
+input.
+2. If A is NT and M[A, a] = {synch} then pop A.
+3. If A is a terminal and A!=a then pop A (This is
+essentially inserting A before a).
+
+For edge cases in error handling, refer to the test case outputs to determine the appropriate behavior.
+In a separate file, document all handling scenarios identified from the test case outputs.
+Also, if there are any situations where the test cases use two different handling approaches, please let me know.
+
 In this assignment, similar to the previous assignment, the input file is a text file (i.e., named
 input.txt), which includes a C-minus program that is to be scanned and parsed. The parser's
 outputs include two text files, namely parse_tree.txt and syntax_errors.txt, which respectively
