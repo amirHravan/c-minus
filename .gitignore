@@ -216,3 +216,5 @@ __marimo__/
 .streamlit/secrets.toml
 
 parse_tree.png
+first-follow-predict.md
+parser-algo.md

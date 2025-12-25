@@ -26,9 +26,11 @@
    • Every time that parser calls function get_next_token, the current token is replaced by a new
    token returned by this function. In other words, there is only one token accessible to the
    parser at any stage of parsing.
-   • Parser recovers from the syntax errors using the Panic Mode method discussed on pages
-   96-98 of Lecture Note 4 (and by using the follow set of each non-terminal as its
-   synchronizing set).
+   • Parser recovers from the syntax errors using the Panic Mode method:
+   When an error is detected:
+   Discard tokens until one with a clear role is found
+   Continue from there
+   Such tokens are called synchronizing tokens (using the follow set of each non-terminal as its synchronizing set)
 
 In this assignment, similar to the previous assignment, the input file is a text file (i.e., named
 input.txt), which includes a C-minus program that is to be scanned and parsed. The parser's
@@ -143,6 +145,24 @@ Arg-list-prime --> EPSILON
 lines.
 The following figures show an example a parse tree and the desired format of the output:
 
+
+Sample Parse Tree (see parse_tree.png)
+
+A
+├── B
+│ ├── D
+│ ├── G
+│ └── H
+└── C
+├── E
+└── F
+├── I
+├── J
+└── K
+
+Sample Output
+
+
 5. What to Turn In
    Before submitting, please ensure you have done the following:
    • It is your responsibility to ensure that the final version you submit does not have any debug
@@ -176,23 +196,6 @@ produce the expected outputs (i.e., parse_tree.txt and syntax_errors.txt) for a 
 case, a grade of zero will be assigned to it for that test case. Therefore, it is recommended
 that you test your scanner on several different random test cases before submitting your
 code.
-
-
-Sample Parse Tree (see parse_tree.png)
-
-A
-├── B
-│ ├── D
-│ ├── G
-│ └── H
-└── C
-├── E
-└── F
-├── I
-├── J
-└── K
-
-Sample Output
 
 
 • Your parser will be evaluated by the Quera's Judge System (QJS). These 10 samples will be
