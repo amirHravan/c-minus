@@ -54,10 +54,6 @@ input.
 3. If A is a terminal and A!=a then pop A (This is
 essentially inserting A before a).
 
-For edge cases in error handling, refer to the test case outputs to determine the appropriate behavior.
-In a separate file, document all handling scenarios identified from the test case outputs.
-Also, if there are any situations where the test cases use two different handling approaches, please let me know.
-
 In this assignment, similar to the previous assignment, the input file is a text file (i.e., named
 input.txt), which includes a C-minus program that is to be scanned and parsed. The parser's
 outputs include two text files, namely parse_tree.txt and syntax_errors.txt, which respectively
