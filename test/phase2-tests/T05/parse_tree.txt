@@ -42,9 +42,8 @@ Program
                         │                   │       └── Simple-expression-prime
                         │                   │           ├── Additive-expression-prime
                         │                   │           │   ├── Term-prime
-                        │                   │           │   │   ├── Signed-factor-prime
-                        │                   │           │   │   │   └── Factor-prime
-                        │                   │           │   │   │       └── epsilon
+                        │                   │           │   │   ├── Factor-prime
+                        │                   │           │   │   │   └── epsilon
                         │                   │           │   │   └── G
                         │                   │           │   │       └── epsilon
                         │                   │           │   └── D
@@ -151,29 +150,27 @@ Program
                                         │                       └── Simple-expression-prime
                                         │                           ├── Additive-expression-prime
                                         │                           │   ├── Term-prime
-                                        │                           │   │   ├── Signed-factor-prime
-                                        │                           │   │   │   └── Factor-prime
-                                        │                           │   │   │       ├── (SYMBOL, ()
-                                        │                           │   │   │       ├── Args
-                                        │                           │   │   │       │   └── Arg-list
-                                        │                           │   │   │       │       ├── Expression
-                                        │                           │   │   │       │       │   ├── (ID, a)
-                                        │                           │   │   │       │       │   └── B
-                                        │                           │   │   │       │       │       └── Simple-expression-prime
-                                        │                           │   │   │       │       │           ├── Additive-expression-prime
-                                        │                           │   │   │       │       │           │   ├── Term-prime
-                                        │                           │   │   │       │       │           │   │   ├── Signed-factor-prime
-                                        │                           │   │   │       │       │           │   │   │   └── Factor-prime
-                                        │                           │   │   │       │       │           │   │   │       └── epsilon
-                                        │                           │   │   │       │       │           │   │   └── G
-                                        │                           │   │   │       │       │           │   │       └── epsilon
-                                        │                           │   │   │       │       │           │   └── D
-                                        │                           │   │   │       │       │           │       └── epsilon
-                                        │                           │   │   │       │       │           └── C
-                                        │                           │   │   │       │       │               └── epsilon
-                                        │                           │   │   │       │       └── Arg-list-prime
-                                        │                           │   │   │       │           └── epsilon
-                                        │                           │   │   │       └── (SYMBOL, ))
+                                        │                           │   │   ├── Factor-prime
+                                        │                           │   │   │   ├── (SYMBOL, ()
+                                        │                           │   │   │   ├── Args
+                                        │                           │   │   │   │   └── Arg-list
+                                        │                           │   │   │   │       ├── Expression
+                                        │                           │   │   │   │       │   ├── (ID, a)
+                                        │                           │   │   │   │       │   └── B
+                                        │                           │   │   │   │       │       └── Simple-expression-prime
+                                        │                           │   │   │   │       │           ├── Additive-expression-prime
+                                        │                           │   │   │   │       │           │   ├── Term-prime
+                                        │                           │   │   │   │       │           │   │   ├── Factor-prime
+                                        │                           │   │   │   │       │           │   │   │   └── epsilon
+                                        │                           │   │   │   │       │           │   │   └── G
+                                        │                           │   │   │   │       │           │   │       └── epsilon
+                                        │                           │   │   │   │       │           │   └── D
+                                        │                           │   │   │   │       │           │       └── epsilon
+                                        │                           │   │   │   │       │           └── C
+                                        │                           │   │   │   │       │               └── epsilon
+                                        │                           │   │   │   │       └── Arg-list-prime
+                                        │                           │   │   │   │           └── epsilon
+                                        │                           │   │   │   └── (SYMBOL, ))
                                         │                           │   │   └── G
                                         │                           │   │       └── epsilon
                                         │                           │   └── D
@@ -209,29 +206,27 @@ Program
                                                 │                       └── Simple-expression-prime
                                                 │                           ├── Additive-expression-prime
                                                 │                           │   ├── Term-prime
-                                                │                           │   │   ├── Signed-factor-prime
-                                                │                           │   │   │   └── Factor-prime
-                                                │                           │   │   │       ├── (SYMBOL, ()
-                                                │                           │   │   │       ├── Args
-                                                │                           │   │   │       │   └── Arg-list
-                                                │                           │   │   │       │       ├── Expression
-                                                │                           │   │   │       │       │   ├── (ID, b)
-                                                │                           │   │   │       │       │   └── B
-                                                │                           │   │   │       │       │       └── Simple-expression-prime
-                                                │                           │   │   │       │       │           ├── Additive-expression-prime
-                                                │                           │   │   │       │       │           │   ├── Term-prime
-                                                │                           │   │   │       │       │           │   │   ├── Signed-factor-prime
-                                                │                           │   │   │       │       │           │   │   │   └── Factor-prime
-                                                │                           │   │   │       │       │           │   │   │       └── epsilon
-                                                │                           │   │   │       │       │           │   │   └── G
-                                                │                           │   │   │       │       │           │   │       └── epsilon
-                                                │                           │   │   │       │       │           │   └── D
-                                                │                           │   │   │       │       │           │       └── epsilon
-                                                │                           │   │   │       │       │           └── C
-                                                │                           │   │   │       │       │               └── epsilon
-                                                │                           │   │   │       │       └── Arg-list-prime
-                                                │                           │   │   │       │           └── epsilon
-                                                │                           │   │   │       └── (SYMBOL, ))
+                                                │                           │   │   ├── Factor-prime
+                                                │                           │   │   │   ├── (SYMBOL, ()
+                                                │                           │   │   │   ├── Args
+                                                │                           │   │   │   │   └── Arg-list
+                                                │                           │   │   │   │       ├── Expression
+                                                │                           │   │   │   │       │   ├── (ID, b)
+                                                │                           │   │   │   │       │   └── B
+                                                │                           │   │   │   │       │       └── Simple-expression-prime
+                                                │                           │   │   │   │       │           ├── Additive-expression-prime
+                                                │                           │   │   │   │       │           │   ├── Term-prime
+                                                │                           │   │   │   │       │           │   │   ├── Factor-prime
+                                                │                           │   │   │   │       │           │   │   │   └── epsilon
+                                                │                           │   │   │   │       │           │   │   └── G
+                                                │                           │   │   │   │       │           │   │       └── epsilon
+                                                │                           │   │   │   │       │           │   └── D
+                                                │                           │   │   │   │       │           │       └── epsilon
+                                                │                           │   │   │   │       │           └── C
+                                                │                           │   │   │   │       │               └── epsilon
+                                                │                           │   │   │   │       └── Arg-list-prime
+                                                │                           │   │   │   │           └── epsilon
+                                                │                           │   │   │   └── (SYMBOL, ))
                                                 │                           │   │   └── G
                                                 │                           │   │       └── epsilon
                                                 │                           │   └── D

@@ -26,9 +26,8 @@ Program
 │   │               │   │       │       └── Simple-expression-prime
 │   │               │   │       │           ├── Additive-expression-prime
 │   │               │   │       │           │   ├── Term-prime
-│   │               │   │       │           │   │   ├── Signed-factor-prime
-│   │               │   │       │           │   │   │   └── Factor-prime
-│   │               │   │       │           │   │   │       └── epsilon
+│   │               │   │       │           │   │   ├── Factor-prime
+│   │               │   │       │           │   │   │   └── epsilon
 │   │               │   │       │           │   │   └── G
 │   │               │   │       │           │   │       └── epsilon
 │   │               │   │       │           │   └── D
@@ -61,9 +60,8 @@ Program
 │   │               │   │               │               └── Simple-expression-prime
 │   │               │   │               │                   ├── Additive-expression-prime
 │   │               │   │               │                   │   ├── Term-prime
-│   │               │   │               │                   │   │   ├── Signed-factor-prime
-│   │               │   │               │                   │   │   │   └── Factor-prime
-│   │               │   │               │                   │   │   │       └── epsilon
+│   │               │   │               │                   │   │   ├── Factor-prime
+│   │               │   │               │                   │   │   │   └── epsilon
 │   │               │   │               │                   │   │   └── G
 │   │               │   │               │                   │   │       └── epsilon
 │   │               │   │               │                   │   └── D
