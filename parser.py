@@ -13,7 +13,9 @@ class ParseNode:
         self.children = []
     
     def add_child(self, child):
-        self.children.append(child)
+        # Skip None children (from failed match attempts)
+        if child is not None:
+            self.children.append(child)
     
     def to_string(self, prefix: str = "", is_root: bool = True, is_last: bool = True) -> str:
         """Convert parse tree to required string format with tree-drawing characters."""
@@ -434,8 +436,8 @@ class Parser:
         else:
             # Terminal mismatch - Panic Mode
             self._add_error(f"missing {expected}")
-            # Don't consume token, return epsilon
-            return ParseNode("epsilon", is_terminal=True)
+            # Don't consume token, return None (no node added)
+            return None
     
     def parse(self) -> tuple[ParseNode, list[str]]:
         """Main parsing function."""
