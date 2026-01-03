@@ -59,7 +59,7 @@ class Scanner:
     def _is_valid_id_start(self, char: str) -> bool:
         return char is not None and (char.isalpha() or char == "_")
 
-    def get_next_token(self) -> bool:
+    def get_next_token(self) -> Token:
         while not self._is_eof():
             char = self._peek()
             if char is None:
@@ -72,11 +72,15 @@ class Scanner:
 
             # 2. Numbers
             if char.isdigit():
-                return self._handle_number()
+                token = self._handle_number()
+                if token:
+                    return token
 
             # 3. IDs and Keywords
             if self._is_valid_id_start(char):
-                return self._handle_id()
+                token = self._handle_id()
+                if token:
+                    return token
 
             # 4. Comments and Symbols
             # Need to check for comments first because they start with symbol characters
@@ -89,7 +93,9 @@ class Scanner:
                     self._handle_line_comment()
                     continue
                 else:
-                    return self._handle_symbol()
+                    token = self._handle_symbol()
+                    if token:
+                        return token
 
             if char == "*":
                 next_char = self._peek(1)
@@ -102,7 +108,9 @@ class Scanner:
                     continue  # Panic mode: skip and continue
 
             if self._is_symbol_start(char):
-                return self._handle_symbol()
+                token = self._handle_symbol()
+                if token:
+                    return token
 
             # 5. Illegal Character
             # Invalid character that can't begin any token
@@ -123,9 +131,10 @@ class Scanner:
             )
             # Loop continues to find next token
 
-        return False  # EOF
+        # Return EOF token
+        return Token(self.line_number, TokenType.EOF, "$")
 
-    def _handle_number(self) -> bool:
+    def _handle_number(self) -> Token:
         _ = self.cursor
         lexeme = ""
 
@@ -147,19 +156,20 @@ class Scanner:
             self._add_error(
                 LeximError(self.line_number, lexeme, LeximErrorType.MALFORMED_NUM)
             )
-            return True  # We processed input, even if error
+            return None  # Error, no valid token
 
         # Validate Number Format
         if len(lexeme) > 1 and lexeme.startswith("0"):
             self._add_error(
                 LeximError(self.line_number, lexeme, LeximErrorType.MALFORMED_NUM)
             )
-            return True
+            return None  # Error, no valid token
 
+        token = Token(self.line_number, TokenType.NUMBER, lexeme)
         self._add_token(TokenType.NUMBER, lexeme)
-        return True
+        return token
 
-    def _handle_id(self) -> bool:
+    def _handle_id(self) -> Token:
         lexeme = ""
 
         # Consume valid ID characters
@@ -187,16 +197,18 @@ class Scanner:
             self._add_error(
                 LeximError(self.line_number, lexeme, LeximErrorType.INVALID_CHAR)
             )
-            return True
+            return None  # Error, no valid token
 
         # Valid ID or Keyword
         if lexeme in KEYWORDS:
+            token = Token(self.line_number, TokenType.KEYWORD, lexeme)
             self._add_token(TokenType.KEYWORD, lexeme)
         else:
+            token = Token(self.line_number, TokenType.ID, lexeme)
             self._add_token(TokenType.ID, lexeme)
-        return True
+        return token
 
-    def _handle_symbol(self) -> bool:
+    def _handle_symbol(self) -> Token:
         char = self._peek()
         next_char = self._peek(1)
 
@@ -206,20 +218,22 @@ class Scanner:
         if two_chars == "==":
             self._advance()
             self._advance()
+            token = Token(self.line_number, TokenType.SYMBOL, "==")
             self._add_token(TokenType.SYMBOL, "==")
-            return True
+            return token
 
         # Check for valid single char symbol
         if char in SYMBOLS:
             self._advance()
+            token = Token(self.line_number, TokenType.SYMBOL, char)
             self._add_token(TokenType.SYMBOL, char)
-            return True
+            return token
 
         # Invalid symbol character - should not reach here in normal flow
         # This is a safety fallback
         self._add_error(LeximError(self.line_number, char, LeximErrorType.INVALID_CHAR))
         self._advance()
-        return True
+        return None  # Error, no valid token
 
     def _handle_line_comment(self) -> None:
         # Consume //

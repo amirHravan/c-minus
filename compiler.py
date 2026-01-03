@@ -4,6 +4,7 @@
 import logging
 
 from scanner import Scanner
+from parser import Parser
 from tables import error_table, symbol_table, token_table
 
 logging.basicConfig(
@@ -22,11 +23,16 @@ def main():
         return
 
     scanner = Scanner(content)
+    parser = Parser(scanner)
 
-    # Run Scanner until EOF
-    while scanner.get_next_token():
-        pass
+    # Run parser (parser calls scanner as needed)
+    parser.parse()
 
+    # Export outputs for Phase 2
+    parser.export_parse_tree("parse_tree.txt")
+    parser.export_syntax_errors("syntax_errors.txt")
+    
+    # Also export scanner outputs (for Phase 1 compatibility if needed)
     token_table.export_to_file("tokens.txt")
     error_table.export_to_file("lexical_errors.txt")
     symbol_table.export_to_file("symbol_table.txt")
