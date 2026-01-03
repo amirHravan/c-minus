@@ -720,20 +720,9 @@ class Parser:
                 self._add_error("missing Statement-list")
                 node.add_child(ParseNode("epsilon", is_terminal=True))
             else:
-                # Discard tokens until we find one in FIRST or FOLLOW
-                while lookahead not in self.first_sets.get("Statement-list", set()) and \
-                      lookahead not in self.follow_sets.get("Statement-list", set()) and \
-                      lookahead != "$":
-                    self._add_error(f"illegal {lookahead}")
-                    self.current_token = self.scanner.get_next_token()
-                    lookahead = self._get_token_string(self.current_token)
-                
-                # Now try again
-                if lookahead in self.follow_sets.get("Statement-list", set()) or lookahead == "$":
-                    node.add_child(ParseNode("epsilon", is_terminal=True))
-                else:
-                    # Lookahead is in FIRST, try to parse
-                    return self.statement_list()
+                self._add_error(f"illegal {lookahead}")
+                self.current_token = self.scanner.get_next_token()
+                return self.statement_list()
         
         return node
     
