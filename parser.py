@@ -413,6 +413,28 @@ class Parser:
         line_num = self.current_token.line_number if self.current_token else 1
         self.syntax_errors.append(f"#{line_num} : syntax error, {message}")
     
+    def _check_first_follow(self, non_terminal: str):
+        """
+        General panic mode handler for non-terminals.
+        Returns: 'proceed', 'skip', or 'discard'
+        """
+        lookahead = self._get_token_string(self.current_token)
+        
+        # If lookahead is in FIRST set, proceed normally
+        if lookahead in self.first_sets.get(non_terminal, set()):
+            return 'proceed'
+        
+        # Otherwise, panic mode (no table entry)
+        if lookahead in self.follow_sets.get(non_terminal, set()):
+            # Report missing and pop (don't add to tree)
+            self._add_error(f"missing {non_terminal}")
+            return 'skip'
+        else:
+            # Report illegal and discard ONE token
+            self._add_error(f"illegal {lookahead}")
+            self.current_token = self.scanner.get_next_token()
+            return 'discard'  # Caller should retry
+    
     def match(self, expected: str) -> ParseNode:
         """Match a terminal symbol."""
         token_str = self._get_token_string(self.current_token)
@@ -503,35 +525,25 @@ class Parser:
             node.add_child(ParseNode("epsilon", is_terminal=True))
         else:
             # No valid production - Panic Mode
-            if lookahead in self.follow_sets.get("Declaration-list", set()):
-                self._add_error("missing Declaration-list")
+            result = self._check_first_follow("Declaration-list")
+            if result == 'skip':
                 node.add_child(ParseNode("epsilon", is_terminal=True))
-            else:
-                self._add_error(f"illegal {lookahead}")
-                self.current_token = self.scanner.get_next_token()
+            else:  # result == 'discard'
                 return self.declaration_list()
         
         return node
     
     def declaration(self) -> ParseNode:
         """Declaration → Declaration-initial Declaration-prime"""
+        result = self._check_first_follow("Declaration")
+        if result == 'skip':
+            return None
+        elif result == 'discard':
+            return self.declaration()
+        
         node = ParseNode("Declaration")
-        lookahead = self._get_token_string(self.current_token)
-        
-        prod_num = self._get_predict_production("Declaration", lookahead)
-        
-        if prod_num == 4:
-            node.add_child(self.declaration_initial())
-            node.add_child(self.declaration_prime())
-        else:
-            # No valid production - Panic Mode
-            if lookahead in self.follow_sets.get("Declaration", set()):
-                self._add_error("missing Declaration")
-            else:
-                self._add_error(f"illegal {lookahead}")
-                self.current_token = self.scanner.get_next_token()
-                return self.declaration()
-        
+        node.add_child(self.declaration_initial())
+        node.add_child(self.declaration_prime())
         return node
     
     def declaration_initial(self) -> ParseNode:
@@ -554,11 +566,10 @@ class Parser:
             node.add_child(self.var_declaration_prime())
         else:
             # No valid production - Panic Mode
-            if lookahead in self.follow_sets.get("Declaration-prime", set()):
-                self._add_error("missing Declaration-prime")
-            else:
-                self._add_error(f"illegal {lookahead}")
-                self.current_token = self.scanner.get_next_token()
+            result = self._check_first_follow("Declaration-prime")
+            if result == 'skip':
+                return None
+            else:  # result == 'discard'
                 return self.declaration_prime()
         
         return node
@@ -579,11 +590,10 @@ class Parser:
             node.add_child(self.match(";"))
         else:
             # No valid production - Panic Mode
-            if lookahead in self.follow_sets.get("Var-declaration-prime", set()):
-                self._add_error("missing Var-declaration-prime")
-            else:
-                self._add_error(f"illegal {lookahead}")
-                self.current_token = self.scanner.get_next_token()
+            result = self._check_first_follow("Var-declaration-prime")
+            if result == 'skip':
+                return None
+            else:  # result == 'discard'
                 return self.var_declaration_prime()
         
         return node
@@ -607,8 +617,12 @@ class Parser:
         elif lookahead == "void":
             node.add_child(self.match("void"))
         else:
-            self._add_error(f"illegal {lookahead}")
-            self.current_token = self.scanner.get_next_token()
+            # No valid production - Panic Mode
+            result = self._check_first_follow("Type-specifier")
+            if result == 'skip':
+                return None
+            else:  # result == 'discard'
+                return self.type_specifier()
         
         return node
     
@@ -628,11 +642,10 @@ class Parser:
             node.add_child(self.match("void"))
         else:
             # No valid production - Panic Mode
-            if lookahead in self.follow_sets.get("Params", set()):
-                self._add_error("missing Params")
-            else:
-                self._add_error(f"illegal {lookahead}")
-                self.current_token = self.scanner.get_next_token()
+            result = self._check_first_follow("Params")
+            if result == 'skip':
+                return None
+            else:  # result == 'discard'
                 return self.params()
         
         return node
@@ -652,12 +665,10 @@ class Parser:
             node.add_child(ParseNode("epsilon", is_terminal=True))
         else:
             # No valid production - Panic Mode
-            if lookahead in self.follow_sets.get("Param-list", set()):
-                self._add_error("missing Param-list")
+            result = self._check_first_follow("Param-list")
+            if result == 'skip':
                 node.add_child(ParseNode("epsilon", is_terminal=True))
-            else:
-                self._add_error(f"illegal {lookahead}")
-                self.current_token = self.scanner.get_next_token()
+            else:  # result == 'discard'
                 return self.param_list()
         
         return node
@@ -683,12 +694,10 @@ class Parser:
             node.add_child(ParseNode("epsilon", is_terminal=True))
         else:
             # No valid production - Panic Mode
-            if lookahead in self.follow_sets.get("Param-prime", set()):
-                self._add_error("missing Param-prime")
+            result = self._check_first_follow("Param-prime")
+            if result == 'skip':
                 node.add_child(ParseNode("epsilon", is_terminal=True))
-            else:
-                self._add_error(f"illegal {lookahead}")
-                self.current_token = self.scanner.get_next_token()
+            else:  # result == 'discard'
                 return self.param_prime()
         
         return node
@@ -716,12 +725,12 @@ class Parser:
             node.add_child(ParseNode("epsilon", is_terminal=True))
         else:
             # No valid production - Panic Mode
-            if lookahead in self.follow_sets.get("Statement-list", set()):
-                self._add_error("missing Statement-list")
+            result = self._check_first_follow("Statement-list")
+            if result == 'skip':
                 node.add_child(ParseNode("epsilon", is_terminal=True))
-            else:
-                self._add_error(f"illegal {lookahead}")
-                self.current_token = self.scanner.get_next_token()
+            elif result == 'discard':
+                return self.statement_list()  # Retry after discarding one token
+            else:  # result == 'proceed' (shouldn't happen in else, but handle it)
                 return self.statement_list()
         
         return node
@@ -745,11 +754,10 @@ class Parser:
             node.add_child(self.return_stmt())
         else:
             # No valid production - Panic Mode
-            if lookahead in self.follow_sets.get("Statement", set()):
-                self._add_error("missing Statement")
-            else:
-                self._add_error(f"illegal {lookahead}")
-                self.current_token = self.scanner.get_next_token()
+            result = self._check_first_follow("Statement")
+            if result == 'skip':
+                return None
+            else:  # result == 'discard'
                 return self.statement()
         
         return node
@@ -771,11 +779,10 @@ class Parser:
             node.add_child(self.match(";"))
         else:
             # No valid production - Panic Mode
-            if lookahead in self.follow_sets.get("Expression-stmt", set()):
-                self._add_error("missing Expression-stmt")
-            else:
-                self._add_error(f"illegal {lookahead}")
-                self.current_token = self.scanner.get_next_token()
+            result = self._check_first_follow("Expression-stmt")
+            if result == 'skip':
+                return None
+            else:  # result == 'discard'
                 return self.expression_stmt()
         
         return node
@@ -805,12 +812,10 @@ class Parser:
             node.add_child(ParseNode("epsilon", is_terminal=True))
         else:
             # No valid production - Panic Mode
-            if lookahead in self.follow_sets.get("Else-stmt", set()):
-                self._add_error("missing Else-stmt")
+            result = self._check_first_follow("Else-stmt")
+            if result == 'skip':
                 node.add_child(ParseNode("epsilon", is_terminal=True))
-            else:
-                self._add_error(f"illegal {lookahead}")
-                self.current_token = self.scanner.get_next_token()
+            else:  # result == 'discard'
                 return self.else_stmt()
         
         return node
@@ -850,11 +855,10 @@ class Parser:
             node.add_child(self.match(";"))
         else:
             # No valid production - Panic Mode
-            if lookahead in self.follow_sets.get("Return-stmt-prime", set()):
-                self._add_error("missing Return-stmt-prime")
-            else:
-                self._add_error(f"illegal {lookahead}")
-                self.current_token = self.scanner.get_next_token()
+            result = self._check_first_follow("Return-stmt-prime")
+            if result == 'skip':
+                return None
+            else:  # result == 'discard'
                 return self.return_stmt_prime()
         
         return node
@@ -873,11 +877,10 @@ class Parser:
             node.add_child(self.b())
         else:
             # No valid production - Panic Mode
-            if lookahead in self.follow_sets.get("Expression", set()):
-                self._add_error("missing Expression")
-            else:
-                self._add_error(f"illegal {lookahead}")
-                self.current_token = self.scanner.get_next_token()
+            result = self._check_first_follow("Expression")
+            if result == 'skip':
+                return None
+            else:  # result == 'discard'
                 return self.expression()
         
         return node
@@ -901,11 +904,10 @@ class Parser:
             node.add_child(self.simple_expression_prime())
         else:
             # No valid production - Panic Mode
-            if lookahead in self.follow_sets.get("B", set()):
-                self._add_error("missing B")
-            else:
-                self._add_error(f"illegal {lookahead}")
-                self.current_token = self.scanner.get_next_token()
+            result = self._check_first_follow("B")
+            if result == 'skip':
+                return None
+            else:  # result == 'discard'
                 return self.b()
         
         return node
@@ -926,11 +928,10 @@ class Parser:
             node.add_child(self.c())
         else:
             # No valid production - Panic Mode
-            if lookahead in self.follow_sets.get("H", set()):
-                self._add_error("missing H")
-            else:
-                self._add_error(f"illegal {lookahead}")
-                self.current_token = self.scanner.get_next_token()
+            result = self._check_first_follow("H")
+            if result == 'skip':
+                return None
+            else:  # result == 'discard'
                 return self.h()
         
         return node
@@ -963,12 +964,10 @@ class Parser:
             node.add_child(ParseNode("epsilon", is_terminal=True))
         else:
             # No valid production - Panic Mode
-            if lookahead in self.follow_sets.get("C", set()):
-                self._add_error("missing C")
+            result = self._check_first_follow("C")
+            if result == 'skip':
                 node.add_child(ParseNode("epsilon", is_terminal=True))
-            else:
-                self._add_error(f"illegal {lookahead}")
-                self.current_token = self.scanner.get_next_token()
+            else:  # result == 'discard'
                 return self.c()
         
         return node
@@ -983,13 +982,24 @@ class Parser:
         elif lookahead == "<":
             node.add_child(self.match("<"))
         else:
-            self._add_error(f"illegal {lookahead}")
-            self.current_token = self.scanner.get_next_token()
+            # No valid production - Panic Mode
+            result = self._check_first_follow("Relop")
+            if result == 'skip':
+                return None
+            else:  # result == 'discard'
+                return self.relop()
         
         return node
     
     def additive_expression(self) -> ParseNode:
         """Additive-expression → Term D"""
+        result = self._check_first_follow("Additive-expression")
+        if result == 'skip':
+            return None  # Missing non-terminal
+        elif result == 'discard':
+            return self.additive_expression()  # Retry after discarding one token
+        
+        # result == 'proceed'
         node = ParseNode("Additive-expression")
         node.add_child(self.term())
         node.add_child(self.d())
@@ -1024,12 +1034,10 @@ class Parser:
             node.add_child(ParseNode("epsilon", is_terminal=True))
         else:
             # No valid production - Panic Mode
-            if lookahead in self.follow_sets.get("D", set()):
-                self._add_error("missing D")
+            result = self._check_first_follow("D")
+            if result == 'skip':
                 node.add_child(ParseNode("epsilon", is_terminal=True))
-            else:
-                self._add_error(f"illegal {lookahead}")
-                self.current_token = self.scanner.get_next_token()
+            else:  # result == 'discard'
                 return self.d()
         
         return node
@@ -1044,8 +1052,12 @@ class Parser:
         elif lookahead == "-":
             node.add_child(self.match("-"))
         else:
-            self._add_error(f"illegal {lookahead}")
-            self.current_token = self.scanner.get_next_token()
+            # No valid production - Panic Mode
+            result = self._check_first_follow("Addop")
+            if result == 'skip':
+                return None
+            else:  # result == 'discard'
+                return self.addop()
         
         return node
     
@@ -1089,12 +1101,10 @@ class Parser:
             node.add_child(ParseNode("epsilon", is_terminal=True))
         else:
             # No valid production - Panic Mode
-            if lookahead in self.follow_sets.get("G", set()):
-                self._add_error("missing G")
+            result = self._check_first_follow("G")
+            if result == 'skip':
                 node.add_child(ParseNode("epsilon", is_terminal=True))
-            else:
-                self._add_error(f"illegal {lookahead}")
-                self.current_token = self.scanner.get_next_token()
+            else:  # result == 'discard'
                 return self.g()
         
         return node
@@ -1116,11 +1126,10 @@ class Parser:
             node.add_child(self.factor())
         else:
             # No valid production - Panic Mode
-            if lookahead in self.follow_sets.get("Signed-factor", set()):
-                self._add_error("missing Signed-factor")
-            else:
-                self._add_error(f"illegal {lookahead}")
-                self.current_token = self.scanner.get_next_token()
+            result = self._check_first_follow("Signed-factor")
+            if result == 'skip':
+                return None
+            else:  # result == 'discard'
                 return self.signed_factor()
         
         return node
@@ -1142,11 +1151,10 @@ class Parser:
             node.add_child(self.factor_zegond())
         else:
             # No valid production - Panic Mode
-            if lookahead in self.follow_sets.get("Signed-factor-zegond", set()):
-                self._add_error("missing Signed-factor-zegond")
-            else:
-                self._add_error(f"illegal {lookahead}")
-                self.current_token = self.scanner.get_next_token()
+            result = self._check_first_follow("Signed-factor-zegond")
+            if result == 'skip':
+                return None
+            else:  # result == 'discard'
                 return self.signed_factor_zegond()
         
         return node
@@ -1169,11 +1177,10 @@ class Parser:
             node.add_child(self.match("NUM"))
         else:
             # No valid production - Panic Mode
-            if lookahead in self.follow_sets.get("Factor", set()):
-                self._add_error("missing Factor")
-            else:
-                self._add_error(f"illegal {lookahead}")
-                self.current_token = self.scanner.get_next_token()
+            result = self._check_first_follow("Factor")
+            if result == 'skip':
+                return None
+            else:  # result == 'discard'
                 return self.factor()
         
         return node
@@ -1193,11 +1200,10 @@ class Parser:
             node.add_child(self.var_prime())
         else:
             # No valid production - Panic Mode
-            if lookahead in self.follow_sets.get("Var-call-prime", set()):
-                self._add_error("missing Var-call-prime")
-            else:
-                self._add_error(f"illegal {lookahead}")
-                self.current_token = self.scanner.get_next_token()
+            result = self._check_first_follow("Var-call-prime")
+            if result == 'skip':
+                return None
+            else:  # result == 'discard'
                 return self.var_call_prime()
         
         return node
@@ -1217,12 +1223,10 @@ class Parser:
             node.add_child(ParseNode("epsilon", is_terminal=True))
         else:
             # No valid production - Panic Mode
-            if lookahead in self.follow_sets.get("Var-prime", set()):
-                self._add_error("missing Var-prime")
+            result = self._check_first_follow("Var-prime")
+            if result == 'skip':
                 node.add_child(ParseNode("epsilon", is_terminal=True))
-            else:
-                self._add_error(f"illegal {lookahead}")
-                self.current_token = self.scanner.get_next_token()
+            else:  # result == 'discard'
                 return self.var_prime()
         
         return node
@@ -1242,12 +1246,10 @@ class Parser:
             node.add_child(ParseNode("epsilon", is_terminal=True))
         else:
             # No valid production - Panic Mode
-            if lookahead in self.follow_sets.get("Factor-prime", set()):
-                self._add_error("missing Factor-prime")
+            result = self._check_first_follow("Factor-prime")
+            if result == 'skip':
                 node.add_child(ParseNode("epsilon", is_terminal=True))
-            else:
-                self._add_error(f"illegal {lookahead}")
-                self.current_token = self.scanner.get_next_token()
+            else:  # result == 'discard'
                 return self.factor_prime()
         
         return node
@@ -1267,11 +1269,10 @@ class Parser:
             node.add_child(self.match("NUM"))
         else:
             # No valid production - Panic Mode
-            if lookahead in self.follow_sets.get("Factor-zegond", set()):
-                self._add_error("missing Factor-zegond")
-            else:
-                self._add_error(f"illegal {lookahead}")
-                self.current_token = self.scanner.get_next_token()
+            result = self._check_first_follow("Factor-zegond")
+            if result == 'skip':
+                return None
+            else:  # result == 'discard'
                 return self.factor_zegond()
         
         return node
@@ -1289,12 +1290,10 @@ class Parser:
             node.add_child(ParseNode("epsilon", is_terminal=True))
         else:
             # No valid production - Panic Mode
-            if lookahead in self.follow_sets.get("Args", set()):
-                self._add_error("missing Args")
+            result = self._check_first_follow("Args")
+            if result == 'skip':
                 node.add_child(ParseNode("epsilon", is_terminal=True))
-            else:
-                self._add_error(f"illegal {lookahead}")
-                self.current_token = self.scanner.get_next_token()
+            else:  # result == 'discard'
                 return self.args()
         
         return node
@@ -1321,12 +1320,10 @@ class Parser:
             node.add_child(ParseNode("epsilon", is_terminal=True))
         else:
             # No valid production - Panic Mode
-            if lookahead in self.follow_sets.get("Arg-list-prime", set()):
-                self._add_error("missing Arg-list-prime")
+            result = self._check_first_follow("Arg-list-prime")
+            if result == 'skip':
                 node.add_child(ParseNode("epsilon", is_terminal=True))
-            else:
-                self._add_error(f"illegal {lookahead}")
-                self.current_token = self.scanner.get_next_token()
+            else:  # result == 'discard'
                 return self.arg_list_prime()
         
         return node
