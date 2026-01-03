@@ -476,6 +476,13 @@ class Parser:
         """Program → Declaration-list $"""
         node = ParseNode("Program")
         node.add_child(self.declaration_list())
+        
+        # Handle any remaining tokens before EOF
+        while self._get_token_string(self.current_token) != "$":
+            token_str = self._get_token_string(self.current_token)
+            self._add_error(f"illegal {token_str}")
+            self.current_token = self.scanner.get_next_token()
+        
         # Add EOF token
         node.add_child(ParseNode("$", is_terminal=True))
         return node
@@ -711,9 +718,20 @@ class Parser:
                 self._add_error("missing Statement-list")
                 node.add_child(ParseNode("epsilon", is_terminal=True))
             else:
-                self._add_error(f"illegal {lookahead}")
-                self.current_token = self.scanner.get_next_token()
-                return self.statement_list()
+                # Discard tokens until we find one in FIRST or FOLLOW
+                while lookahead not in self.first_sets.get("Statement-list", set()) and \
+                      lookahead not in self.follow_sets.get("Statement-list", set()) and \
+                      lookahead != "$":
+                    self._add_error(f"illegal {lookahead}")
+                    self.current_token = self.scanner.get_next_token()
+                    lookahead = self._get_token_string(self.current_token)
+                
+                # Now try again
+                if lookahead in self.follow_sets.get("Statement-list", set()) or lookahead == "$":
+                    node.add_child(ParseNode("epsilon", is_terminal=True))
+                else:
+                    # Lookahead is in FIRST, try to parse
+                    return self.statement_list()
         
         return node
     
