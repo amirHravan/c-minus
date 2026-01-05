@@ -5,4 +5,7 @@
 5.	int
 6.	return
 7.	void
-8.	x
+8.	a
+9.	b
+10.	main
+11.	output
