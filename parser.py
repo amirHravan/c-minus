@@ -52,6 +52,8 @@ class Parser:
         self.current_token = None
         self.syntax_errors = []
         self.parse_tree = None
+        self.eof_error_reported = False
+        self.unexpected_eof = False
         
         # First sets for non-terminals (from first-follow-predict.md)
         self.first_sets = self._init_first_sets()
@@ -418,6 +420,9 @@ class Parser:
         General panic mode handler for non-terminals.
         Returns: 'proceed', 'skip', or 'discard'
         """
+        if self.unexpected_eof:
+            return 'skip'
+        
         lookahead = self._get_token_string(self.current_token)
         
         # If lookahead is in FIRST set, proceed normally
@@ -429,14 +434,31 @@ class Parser:
             # Report missing and pop (don't add to tree)
             self._add_error(f"missing {non_terminal}")
             return 'skip'
+        elif lookahead == "$":
+            # Unexpected EOF - report once and stop parsing
+            if not self.eof_error_reported:
+                self._add_error("Unexpected EOF")
+                self.eof_error_reported = True
+            self.unexpected_eof = True
+            return 'skip'
         else:
             # Report illegal and discard ONE token
             self._add_error(f"illegal {lookahead}")
             self.current_token = self.scanner.get_next_token()
+            # After discarding, check if we hit EOF
+            if self._get_token_string(self.current_token) == "$":
+                if not self.eof_error_reported:
+                    self._add_error("Unexpected EOF")
+                    self.eof_error_reported = True
+                self.unexpected_eof = True
+                return 'skip'
             return 'discard'  # Caller should retry
     
     def match(self, expected: str) -> ParseNode:
         """Match a terminal symbol."""
+        if self.unexpected_eof:
+            return None
+        
         token_str = self._get_token_string(self.current_token)
         
         if token_str == expected:
@@ -457,7 +479,13 @@ class Parser:
             return node
         else:
             # Terminal mismatch - Panic Mode
-            self._add_error(f"missing {expected}")
+            if token_str == "$":
+                if not self.eof_error_reported:
+                    self._add_error("Unexpected EOF")
+                    self.eof_error_reported = True
+                self.unexpected_eof = True
+            else:
+                self._add_error(f"missing {expected}")
             # Don't consume token, return None (no node added)
             return None
     
@@ -501,6 +529,10 @@ class Parser:
         node = ParseNode("Program")
         node.add_child(self.declaration_list())
         
+        # If unexpected EOF, stop here
+        if self.unexpected_eof:
+            return node
+        
         # Handle any remaining tokens before EOF
         while self._get_token_string(self.current_token) != "$":
             token_str = self._get_token_string(self.current_token)
@@ -513,6 +545,8 @@ class Parser:
     
     def declaration_list(self) -> ParseNode:
         """Declaration-list → Declaration Declaration-list | ε"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Declaration-list")
         lookahead = self._get_token_string(self.current_token)
         
@@ -520,6 +554,8 @@ class Parser:
         
         if prod_num == 2:  # Declaration Declaration-list
             node.add_child(self.declaration())
+            if self.unexpected_eof:
+                return node
             node.add_child(self.declaration_list())
         elif prod_num == 3:  # ε
             node.add_child(ParseNode("epsilon", is_terminal=True))
@@ -527,6 +563,8 @@ class Parser:
             # No valid production - Panic Mode
             result = self._check_first_follow("Declaration-list")
             if result == 'skip':
+                if self.unexpected_eof:
+                    return None
                 node.add_child(ParseNode("epsilon", is_terminal=True))
             else:  # result == 'discard'
                 return self.declaration_list()
@@ -535,6 +573,8 @@ class Parser:
     
     def declaration(self) -> ParseNode:
         """Declaration → Declaration-initial Declaration-prime"""
+        if self.unexpected_eof:
+            return None
         result = self._check_first_follow("Declaration")
         if result == 'skip':
             return None
@@ -548,6 +588,8 @@ class Parser:
     
     def declaration_initial(self) -> ParseNode:
         """Declaration-initial → Type-specifier ID"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Declaration-initial")
         node.add_child(self.type_specifier())
         node.add_child(self.match("ID"))
@@ -555,6 +597,8 @@ class Parser:
     
     def declaration_prime(self) -> ParseNode:
         """Declaration-prime → Fun-declaration-prime | Var-declaration-prime"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Declaration-prime")
         lookahead = self._get_token_string(self.current_token)
         
@@ -576,6 +620,8 @@ class Parser:
     
     def var_declaration_prime(self) -> ParseNode:
         """Var-declaration-prime → [ NUM ] ; | ;"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Var-declaration-prime")
         lookahead = self._get_token_string(self.current_token)
         
@@ -600,6 +646,8 @@ class Parser:
     
     def fun_declaration_prime(self) -> ParseNode:
         """Fun-declaration-prime → ( Params ) Compound-stmt"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Fun-declaration-prime")
         node.add_child(self.match("("))
         node.add_child(self.params())
@@ -609,6 +657,8 @@ class Parser:
     
     def type_specifier(self) -> ParseNode:
         """Type-specifier → int | void"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Type-specifier")
         lookahead = self._get_token_string(self.current_token)
         
@@ -628,6 +678,8 @@ class Parser:
     
     def params(self) -> ParseNode:
         """Params → int ID Param-prime Param-list | void"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Params")
         lookahead = self._get_token_string(self.current_token)
         
@@ -652,6 +704,8 @@ class Parser:
     
     def param_list(self) -> ParseNode:
         """Param-list → , Param Param-list | ε"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Param-list")
         lookahead = self._get_token_string(self.current_token)
         
@@ -667,6 +721,8 @@ class Parser:
             # No valid production - Panic Mode
             result = self._check_first_follow("Param-list")
             if result == 'skip':
+                if self.unexpected_eof:
+                    return None
                 node.add_child(ParseNode("epsilon", is_terminal=True))
             else:  # result == 'discard'
                 return self.param_list()
@@ -675,6 +731,8 @@ class Parser:
     
     def param(self) -> ParseNode:
         """Param → Declaration-initial Param-prime"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Param")
         node.add_child(self.declaration_initial())
         node.add_child(self.param_prime())
@@ -682,6 +740,8 @@ class Parser:
     
     def param_prime(self) -> ParseNode:
         """Param-prime → [ ] | ε"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Param-prime")
         lookahead = self._get_token_string(self.current_token)
         
@@ -696,6 +756,8 @@ class Parser:
             # No valid production - Panic Mode
             result = self._check_first_follow("Param-prime")
             if result == 'skip':
+                if self.unexpected_eof:
+                    return None
                 node.add_child(ParseNode("epsilon", is_terminal=True))
             else:  # result == 'discard'
                 return self.param_prime()
@@ -704,6 +766,8 @@ class Parser:
     
     def compound_stmt(self) -> ParseNode:
         """Compound-stmt → { Declaration-list Statement-list }"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Compound-stmt")
         node.add_child(self.match("{"))
         node.add_child(self.declaration_list())
@@ -713,6 +777,8 @@ class Parser:
     
     def statement_list(self) -> ParseNode:
         """Statement-list → Statement Statement-list | ε"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Statement-list")
         lookahead = self._get_token_string(self.current_token)
         
@@ -727,6 +793,8 @@ class Parser:
             # No valid production - Panic Mode
             result = self._check_first_follow("Statement-list")
             if result == 'skip':
+                if self.unexpected_eof:
+                    return None
                 node.add_child(ParseNode("epsilon", is_terminal=True))
             elif result == 'discard':
                 return self.statement_list()  # Retry after discarding one token
@@ -737,6 +805,8 @@ class Parser:
     
     def statement(self) -> ParseNode:
         """Statement → Expression-stmt | Compound-stmt | Selection-stmt | Iteration-stmt | Return-stmt"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Statement")
         lookahead = self._get_token_string(self.current_token)
         
@@ -764,6 +834,8 @@ class Parser:
     
     def expression_stmt(self) -> ParseNode:
         """Expression-stmt → Expression ; | break ; | ;"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Expression-stmt")
         lookahead = self._get_token_string(self.current_token)
         
@@ -789,6 +861,8 @@ class Parser:
     
     def selection_stmt(self) -> ParseNode:
         """Selection-stmt → if ( Expression ) Statement Else-stmt"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Selection-stmt")
         node.add_child(self.match("if"))
         node.add_child(self.match("("))
@@ -800,6 +874,8 @@ class Parser:
     
     def else_stmt(self) -> ParseNode:
         """Else-stmt → else Statement | ε"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Else-stmt")
         lookahead = self._get_token_string(self.current_token)
         
@@ -814,6 +890,8 @@ class Parser:
             # No valid production - Panic Mode
             result = self._check_first_follow("Else-stmt")
             if result == 'skip':
+                if self.unexpected_eof:
+                    return None
                 node.add_child(ParseNode("epsilon", is_terminal=True))
             else:  # result == 'discard'
                 return self.else_stmt()
@@ -822,6 +900,8 @@ class Parser:
     
     def iteration_stmt(self) -> ParseNode:
         """Iteration-stmt → for ( Expression ; Expression ; Expression ) Compound-stmt"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Iteration-stmt")
         node.add_child(self.match("for"))
         node.add_child(self.match("("))
@@ -836,6 +916,8 @@ class Parser:
     
     def return_stmt(self) -> ParseNode:
         """Return-stmt → return Return-stmt-prime"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Return-stmt")
         node.add_child(self.match("return"))
         node.add_child(self.return_stmt_prime())
@@ -843,6 +925,8 @@ class Parser:
     
     def return_stmt_prime(self) -> ParseNode:
         """Return-stmt-prime → Expression ; | ;"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Return-stmt-prime")
         lookahead = self._get_token_string(self.current_token)
         
@@ -865,6 +949,8 @@ class Parser:
     
     def expression(self) -> ParseNode:
         """Expression → Simple-expression-zegond | ID B"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Expression")
         lookahead = self._get_token_string(self.current_token)
         
@@ -887,6 +973,8 @@ class Parser:
     
     def b(self) -> ParseNode:
         """B → = Expression | [ Expression ] H | Simple-expression-prime"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("B")
         lookahead = self._get_token_string(self.current_token)
         
@@ -914,6 +1002,8 @@ class Parser:
     
     def h(self) -> ParseNode:
         """H → = Expression | G D C"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("H")
         lookahead = self._get_token_string(self.current_token)
         
@@ -938,6 +1028,8 @@ class Parser:
     
     def simple_expression_zegond(self) -> ParseNode:
         """Simple-expression-zegond → Additive-expression-zegond C"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Simple-expression-zegond")
         node.add_child(self.additive_expression_zegond())
         node.add_child(self.c())
@@ -945,6 +1037,8 @@ class Parser:
     
     def simple_expression_prime(self) -> ParseNode:
         """Simple-expression-prime → Additive-expression-prime C"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Simple-expression-prime")
         node.add_child(self.additive_expression_prime())
         node.add_child(self.c())
@@ -952,6 +1046,8 @@ class Parser:
     
     def c(self) -> ParseNode:
         """C → Relop Additive-expression | ε"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("C")
         lookahead = self._get_token_string(self.current_token)
         
@@ -966,6 +1062,8 @@ class Parser:
             # No valid production - Panic Mode
             result = self._check_first_follow("C")
             if result == 'skip':
+                if self.unexpected_eof:
+                    return None
                 node.add_child(ParseNode("epsilon", is_terminal=True))
             else:  # result == 'discard'
                 return self.c()
@@ -974,6 +1072,8 @@ class Parser:
     
     def relop(self) -> ParseNode:
         """Relop → == | <"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Relop")
         lookahead = self._get_token_string(self.current_token)
         
@@ -993,6 +1093,8 @@ class Parser:
     
     def additive_expression(self) -> ParseNode:
         """Additive-expression → Term D"""
+        if self.unexpected_eof:
+            return None
         result = self._check_first_follow("Additive-expression")
         if result == 'skip':
             return None  # Missing non-terminal
@@ -1007,6 +1109,8 @@ class Parser:
     
     def additive_expression_prime(self) -> ParseNode:
         """Additive-expression-prime → Term-prime D"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Additive-expression-prime")
         node.add_child(self.term_prime())
         node.add_child(self.d())
@@ -1014,6 +1118,8 @@ class Parser:
     
     def additive_expression_zegond(self) -> ParseNode:
         """Additive-expression-zegond → Term-zegond D"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Additive-expression-zegond")
         node.add_child(self.term_zegond())
         node.add_child(self.d())
@@ -1021,6 +1127,8 @@ class Parser:
     
     def d(self) -> ParseNode:
         """D → Addop Term D | ε"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("D")
         lookahead = self._get_token_string(self.current_token)
         
@@ -1036,6 +1144,8 @@ class Parser:
             # No valid production - Panic Mode
             result = self._check_first_follow("D")
             if result == 'skip':
+                if self.unexpected_eof:
+                    return None
                 node.add_child(ParseNode("epsilon", is_terminal=True))
             else:  # result == 'discard'
                 return self.d()
@@ -1044,6 +1154,8 @@ class Parser:
     
     def addop(self) -> ParseNode:
         """Addop → + | -"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Addop")
         lookahead = self._get_token_string(self.current_token)
         
@@ -1063,6 +1175,8 @@ class Parser:
     
     def term(self) -> ParseNode:
         """Term → Signed-factor G"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Term")
         node.add_child(self.signed_factor())
         node.add_child(self.g())
@@ -1070,6 +1184,8 @@ class Parser:
     
     def term_prime(self) -> ParseNode:
         """Term-prime → Factor-prime G"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Term-prime")
         node.add_child(self.factor_prime())
         node.add_child(self.g())
@@ -1077,6 +1193,8 @@ class Parser:
     
     def term_zegond(self) -> ParseNode:
         """Term-zegond → Signed-factor-zegond G"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Term-zegond")
         node.add_child(self.signed_factor_zegond())
         node.add_child(self.g())
@@ -1084,6 +1202,8 @@ class Parser:
     
     def g(self) -> ParseNode:
         """G → * Signed-factor G | / Signed-factor G | ε"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("G")
         lookahead = self._get_token_string(self.current_token)
         
@@ -1103,6 +1223,8 @@ class Parser:
             # No valid production - Panic Mode
             result = self._check_first_follow("G")
             if result == 'skip':
+                if self.unexpected_eof:
+                    return None
                 node.add_child(ParseNode("epsilon", is_terminal=True))
             else:  # result == 'discard'
                 return self.g()
@@ -1111,6 +1233,8 @@ class Parser:
     
     def signed_factor(self) -> ParseNode:
         """Signed-factor → + Factor | - Factor | Factor"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Signed-factor")
         lookahead = self._get_token_string(self.current_token)
         
@@ -1136,6 +1260,8 @@ class Parser:
     
     def signed_factor_zegond(self) -> ParseNode:
         """Signed-factor-zegond → + Factor | - Factor | Factor-zegond"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Signed-factor-zegond")
         lookahead = self._get_token_string(self.current_token)
         
@@ -1161,6 +1287,8 @@ class Parser:
     
     def factor(self) -> ParseNode:
         """Factor → ( Expression ) | ID Var-call-prime | NUM"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Factor")
         lookahead = self._get_token_string(self.current_token)
         
@@ -1187,6 +1315,8 @@ class Parser:
     
     def var_call_prime(self) -> ParseNode:
         """Var-call-prime → ( Args ) | Var-prime"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Var-call-prime")
         lookahead = self._get_token_string(self.current_token)
         
@@ -1210,6 +1340,8 @@ class Parser:
     
     def var_prime(self) -> ParseNode:
         """Var-prime → [ Expression ] | ε"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Var-prime")
         lookahead = self._get_token_string(self.current_token)
         
@@ -1225,6 +1357,8 @@ class Parser:
             # No valid production - Panic Mode
             result = self._check_first_follow("Var-prime")
             if result == 'skip':
+                if self.unexpected_eof:
+                    return None
                 node.add_child(ParseNode("epsilon", is_terminal=True))
             else:  # result == 'discard'
                 return self.var_prime()
@@ -1233,6 +1367,8 @@ class Parser:
     
     def factor_prime(self) -> ParseNode:
         """Factor-prime → ( Args ) | ε"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Factor-prime")
         lookahead = self._get_token_string(self.current_token)
         
@@ -1248,6 +1384,8 @@ class Parser:
             # No valid production - Panic Mode
             result = self._check_first_follow("Factor-prime")
             if result == 'skip':
+                if self.unexpected_eof:
+                    return None
                 node.add_child(ParseNode("epsilon", is_terminal=True))
             else:  # result == 'discard'
                 return self.factor_prime()
@@ -1256,6 +1394,8 @@ class Parser:
     
     def factor_zegond(self) -> ParseNode:
         """Factor-zegond → ( Expression ) | NUM"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Factor-zegond")
         lookahead = self._get_token_string(self.current_token)
         
@@ -1279,6 +1419,8 @@ class Parser:
     
     def args(self) -> ParseNode:
         """Args → Arg-list | ε"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Args")
         lookahead = self._get_token_string(self.current_token)
         
@@ -1292,6 +1434,8 @@ class Parser:
             # No valid production - Panic Mode
             result = self._check_first_follow("Args")
             if result == 'skip':
+                if self.unexpected_eof:
+                    return None
                 node.add_child(ParseNode("epsilon", is_terminal=True))
             else:  # result == 'discard'
                 return self.args()
@@ -1300,6 +1444,8 @@ class Parser:
     
     def arg_list(self) -> ParseNode:
         """Arg-list → Expression Arg-list-prime"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Arg-list")
         node.add_child(self.expression())
         node.add_child(self.arg_list_prime())
@@ -1307,6 +1453,8 @@ class Parser:
     
     def arg_list_prime(self) -> ParseNode:
         """Arg-list-prime → , Expression Arg-list-prime | ε"""
+        if self.unexpected_eof:
+            return None
         node = ParseNode("Arg-list-prime")
         lookahead = self._get_token_string(self.current_token)
         
@@ -1322,6 +1470,8 @@ class Parser:
             # No valid production - Panic Mode
             result = self._check_first_follow("Arg-list-prime")
             if result == 'skip':
+                if self.unexpected_eof:
+                    return None
                 node.add_child(ParseNode("epsilon", is_terminal=True))
             else:  # result == 'discard'
                 return self.arg_list_prime()
