@@ -71,8 +71,8 @@ class Parser:
             "Declaration-list": {"int", "void", "ε"},
             "Declaration": {"int", "void"},
             "Declaration-initial": {"int", "void"},
-            "Declaration-prime": {"[", "("},
-            "Var-declaration-prime": {"["},
+            "Declaration-prime": {"[", "(", ";"},
+            "Var-declaration-prime": {"[", ";"},
             "Fun-declaration-prime": {"("},
             "Type-specifier": {"int", "void"},
             "Params": {"int", "void"},
@@ -90,7 +90,7 @@ class Parser:
             "Return-stmt-prime": {"ID", "NUM", ";", "(", "+", "-"},
             "Expression": {"ID", "NUM", "(", "+", "-"},
             "B": {"[", "(", "=", "==", "<", "+", "*", "/", "-", "ε"},
-            "H": {"(", "=", "==", "<", "+", "*", "/", "-", "ε"},
+            "H": {"=", "==", "<", "+", "*", "/", "-", "ε"},
             "Simple-expression-zegond": {"NUM", "(", "+", "-"},
             "Simple-expression-prime": {"(", "==", "<", "+", "*", "/", "-", "ε"},
             "C": {"==", "<", "ε"},
@@ -120,12 +120,12 @@ class Parser:
         """Initialize Follow sets from first-follow-predict.md."""
         return {
             "Program": {"$"},
-            "Declaration-list": {"ID", "NUM", ";", "(", "{", "}", "break", "if", "else", "for", "return", "+", "-", "$"},
-            "Declaration": {"ID", "int", "void", "NUM", ";", "(", "{", "}", "break", "if", "else", "for", "return", "+", "-", "$"},
-            "Declaration-initial": {"[", "(", ",", ")"},
-            "Declaration-prime": {"ID", "int", "void", "NUM", ";", "(", "{", "}", "break", "if", "else", "for", "return", "+", "-", "$"},
-            "Var-declaration-prime": {"ID", "int", "void", "NUM", ";", "(", "{", "}", "break", "if", "else", "for", "return", "+", "-", "$"},
-            "Fun-declaration-prime": {"ID", "int", "void", "NUM", ";", "(", "{", "}", "break", "if", "else", "for", "return", "+", "-", "$"},
+            "Declaration-list": {"ID", "NUM", ";", "(", "{", "}", "break", "if", "for", "return", "+", "-", "$"},
+            "Declaration": {"ID", "int", "void", "NUM", ";", "(", "{", "}", "break", "if", "for", "return", "+", "-", "$"},
+            "Declaration-initial": {"[", "(", ",", ")", ";"},
+            "Declaration-prime": {"ID", "int", "void", "NUM", ";", "(", "{", "}", "break", "if", "for", "return", "+", "-", "$"},
+            "Var-declaration-prime": {"ID", "int", "void", "NUM", ";", "(", "{", "}", "break", "if", "for", "return", "+", "-", "$"},
+            "Fun-declaration-prime": {"ID", "int", "void", "NUM", ";", "(", "{", "}", "break", "if", "for", "return", "+", "-", "$"},
             "Type-specifier": {"ID"},
             "Params": {")"},
             "Param-list": {")"},
@@ -177,7 +177,7 @@ class Parser:
             # Declaration-list → Declaration Declaration-list
             ("Declaration-list", 2): {"int", "void"},
             # Declaration-list → ε
-            ("Declaration-list", 3): {"ID", "NUM", ";", "(", "{", "}", "break", "if", "else", "for", "return", "+", "-", "$"},
+            ("Declaration-list", 3): {"ID", "NUM", ";", "(", "{", "}", "break", "if", "for", "return", "+", "-", "$"},
             
             # Declaration → Declaration-initial Declaration-prime
             ("Declaration", 4): {"int", "void"},
@@ -281,7 +281,7 @@ class Parser:
             # H → = Expression
             ("H", 42): {"="},
             # H → G D C
-            ("H", 43): {"]", ";", ")", ",", "(", "==", "<", "+", "*", "/", "-"},
+            ("H", 43): {"]", ";", ")", ",", "==", "<", "+", "*", "/", "-"},
             
             # Simple-expression-zegond → Additive-expression-zegond C
             ("Simple-expression-zegond", 44): {"NUM", "(", "+", "-"},
