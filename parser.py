@@ -13,7 +13,7 @@ class ParseNode:
         self.children = []
     
     def add_child(self, child):
-        # Skip None children (from failed match attempts)
+        # Skip None children
         if child is not None:
             self.children.append(child)
     
@@ -55,17 +55,14 @@ class Parser:
         self.eof_error_reported = False
         self.unexpected_eof = False
         
-        # First sets for non-terminals (from first-follow-predict.md)
         self.first_sets = self._init_first_sets()
         
-        # Follow sets for non-terminals (from first-follow-predict.md)
         self.follow_sets = self._init_follow_sets()
         
-        # Predict sets for productions (from first-follow-predict.md)
         self.predict_sets = self._init_predict_sets()
     
     def _init_first_sets(self):
-        """Initialize First sets from first-follow-predict.md."""
+        """Initialize First sets"""
         return {
             "Program": {"int", "void", "ε"},
             "Declaration-list": {"int", "void", "ε"},
@@ -117,7 +114,7 @@ class Parser:
         }
     
     def _init_follow_sets(self):
-        """Initialize Follow sets from first-follow-predict.md."""
+        """Initialize Follow sets"""
         return {
             "Program": {"$"},
             "Declaration-list": {"ID", "NUM", ";", "(", "{", "}", "break", "if", "for", "return", "+", "-", "$"},
@@ -169,7 +166,7 @@ class Parser:
         }
     
     def _init_predict_sets(self):
-        """Initialize Predict sets for each production (from first-follow-predict.md)."""
+        """Initialize Predict sets for each production"""
         return {
             # Program → Declaration-list
             ("Program", 1): {"int", "void", "$"},

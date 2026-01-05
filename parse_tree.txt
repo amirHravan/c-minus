@@ -81,6 +81,14 @@ Program
 │           │               │       │       │   ├── (ID, a)
 │           │               │       │       │   └── B
 │           │               │       │       │       └── Simple-expression-prime
+│           │               │       │       │           ├── Additive-expression-prime
+│           │               │       │       │           │   ├── Term-prime
+│           │               │       │       │           │   │   ├── Factor-prime
+│           │               │       │       │           │   │   │   └── epsilon
+│           │               │       │       │           │   │   └── G
+│           │               │       │       │           │   │       └── epsilon
+│           │               │       │       │           │   └── D
+│           │               │       │       │           │       └── epsilon
 │           │               │       │       │           └── C
 │           │               │       │       │               ├── Relop
 │           │               │       │       │               │   └── (SYMBOL, <)
@@ -99,6 +107,11 @@ Program
 │           │               │       │       │   └── B
 │           │               │       │       │       └── Simple-expression-prime
 │           │               │       │       │           ├── Additive-expression-prime
+│           │               │       │       │           │   ├── Term-prime
+│           │               │       │       │           │   │   ├── Factor-prime
+│           │               │       │       │           │   │   │   └── epsilon
+│           │               │       │       │           │   │   └── G
+│           │               │       │       │           │   │       └── epsilon
 │           │               │       │       │           │   └── D
 │           │               │       │       │           │       ├── Addop
 │           │               │       │       │           │       │   └── (SYMBOL, +)
@@ -126,6 +139,14 @@ Program
 │           │               │       │           │   │       │   ├── (ID, a)
 │           │               │       │           │   │       │   └── B
 │           │               │       │           │   │       │       └── Simple-expression-prime
+│           │               │       │           │   │       │           ├── Additive-expression-prime
+│           │               │       │           │   │       │           │   ├── Term-prime
+│           │               │       │           │   │       │           │   │   ├── Factor-prime
+│           │               │       │           │   │       │           │   │   │   └── epsilon
+│           │               │       │           │   │       │           │   │   └── G
+│           │               │       │           │   │       │           │   │       └── epsilon
+│           │               │       │           │   │       │           │   └── D
+│           │               │       │           │   │       │           │       └── epsilon
 │           │               │       │           │   │       │           └── C
 │           │               │       │           │   │       │               ├── Relop
 │           │               │       │           │   │       │               │   └── (SYMBOL, ==)
@@ -160,6 +181,17 @@ Program
 │           │               │       │           │   │       │       │   │       │           │   │   │   │       ├── Expression
 │           │               │       │           │   │       │       │   │       │           │   │   │   │       │   ├── (ID, a)
 │           │               │       │           │   │       │       │   │       │           │   │   │   │       │   └── B
+│           │               │       │           │   │       │       │   │       │           │   │   │   │       │       └── Simple-expression-prime
+│           │               │       │           │   │       │       │   │       │           │   │   │   │       │           ├── Additive-expression-prime
+│           │               │       │           │   │       │       │   │       │           │   │   │   │       │           │   ├── Term-prime
+│           │               │       │           │   │       │       │   │       │           │   │   │   │       │           │   │   ├── Factor-prime
+│           │               │       │           │   │       │       │   │       │           │   │   │   │       │           │   │   │   └── epsilon
+│           │               │       │           │   │       │       │   │       │           │   │   │   │       │           │   │   └── G
+│           │               │       │           │   │       │       │   │       │           │   │   │   │       │           │   │       └── epsilon
+│           │               │       │           │   │       │       │   │       │           │   │   │   │       │           │   └── D
+│           │               │       │           │   │       │       │   │       │           │   │   │   │       │           │       └── epsilon
+│           │               │       │           │   │       │       │   │       │           │   │   │   │       │           └── C
+│           │               │       │           │   │       │       │   │       │           │   │   │   │       │               └── epsilon
 │           │               │       │           │   │       │       │   │       │           │   │   │   │       └── Arg-list-prime
 │           │               │       │           │   │       │       │   │       │           │   │   │   │           └── epsilon
 │           │               │       │           │   │       │       │   │       │           │   │   │   └── (SYMBOL, ))
